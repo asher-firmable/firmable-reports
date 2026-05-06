@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>US Campaign Bounce Analysis — Firmable</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      padding: 40px 20px 80px;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      background: #1d1d1f;
+      color: #fff;
+      border-radius: 12px;
+      padding: 36px 40px;
+      margin-bottom: 32px;
+    }
+    .header .label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .header .meta {
+      font-size: 13px;
+      color: #888;
+    }
+
+    /* Cards */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 32px 36px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .card h2 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #1d1d1f;
+    }
+    .card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 20px 0 10px;
+      color: #444;
+    }
+    .card p {
+      font-size: 14px;
+      color: #444;
+      margin-bottom: 12px;
+    }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* Callout boxes */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 13.5px;
+      margin: 16px 0;
+      line-height: 1.55;
+    }
+    .callout.info    { background: #f0f4ff; border-left: 4px solid #4a6cf7; color: #2a3a8a; }
+    .callout.warning { background: #fff8e6; border-left: 4px solid #f5a623; color: #7a5200; }
+    .callout.danger  { background: #fff1f0; border-left: 4px solid #e05252; color: #7a1a1a; }
+    .callout.success { background: #f0faf4; border-left: 4px solid #34c759; color: #1a5c30; }
+    .callout strong  { font-weight: 700; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; margin: 8px 0 4px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    thead th {
+      background: #f5f5f7;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 2px solid #e5e5ea;
+      color: #555;
+    }
+    tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f0f0f5;
+      color: #333;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #fafafa; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .rate { text-align: right; font-weight: 600; }
+
+    /* Highlighted row */
+    tr.highlight td { background: #fff8e6; }
+
+    /* Pills */
+    .pill {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+    .pill.hard    { background: #ffe5e5; color: #c0392b; }
+    .pill.soft    { background: #fff8e6; color: #b8600a; }
+    .pill.unknown { background: #f0f0f5; color: #666; }
+    .pill.yes     { background: #ffe5e5; color: #c0392b; }
+    .pill.no      { background: #f0faf4; color: #27ae60; }
+    .pill.maybe   { background: #fff8e6; color: #b8600a; }
+
+    /* Stat grid */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin: 8px 0 4px;
+    }
+    .stat-box {
+      background: #f5f5f7;
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .stat-box .value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+      color: #1d1d1f;
+    }
+    .stat-box .label {
+      font-size: 12px;
+      color: #888;
+      font-weight: 500;
+    }
+    .stat-box.red   .value { color: #c0392b; }
+    .stat-box.amber .value { color: #b8600a; }
+    .stat-box.green .value { color: #27ae60; }
+
+    /* Takeaway list */
+    ol.takeaways { padding-left: 20px; }
+    ol.takeaways li {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+    ol.takeaways li strong { color: #1d1d1f; }
+
+    /* Limitations */
+    ul.limits { padding-left: 20px; }
+    ul.limits li {
+      font-size: 13.5px;
+      color: #555;
+      margin-bottom: 8px;
+      line-height: 1.55;
+    }
+
+    /* Section divider */
+    hr { border: none; border-top: 1px solid #e5e5ea; margin: 8px 0 16px; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="label">Firmable — GTM Engineering</div>
+    <h1>US Campaign Bounce Analysis</h1>
+    <div class="meta">Generated 6 May 2026 &nbsp;·&nbsp; 11 campaigns &nbsp;·&nbsp; 5 industries &nbsp;·&nbsp; SmartLead data</div>
+  </div>
+
+  <!-- Background -->
+  <div class="card">
+    <h2>Background: How SmartLead tracks bounces</h2>
+    <p>When SmartLead sends an email and it fails to deliver, two things can happen:</p>
+
+    <h3>1 — Silent rejection (85% of bounces)</h3>
+    <p>The receiving mail server rejects the message at SMTP handshake time and returns a 5xx error code directly to SmartLead. SmartLead increments its <code>bounce_count</code> counter, but no email is sent back to the sending mailbox. There is no per-bounce SMTP code stored anywhere in SmartLead's API — just a total count.</p>
+
+    <h3>2 — NDR email (15% of bounces)</h3>
+    <p>NDR stands for <strong>Non-Delivery Report</strong>. The receiving mail server accepts the message first, then later determines it can't deliver it, and sends a bounce notification email back to the sending address. This lands in SmartLead's master inbox as an untracked reply and contains the SMTP error code in its body. This is the only source of per-bounce SMTP data available — <strong>147 emails out of 943 total recipient bounces</strong>.</p>
+
+    <div class="callout info">
+      <strong>Why Healthcare/Education/Insurance have almost no NDR emails:</strong> Microsoft 365's DBEB rejection (SMTP code 5.4.1) happens at the SMTP handshake — it's a silent rejection, so no notification email is ever generated. That's also why ~90% of the NDRs we do have are from the minority of bounces where the receiving server sent a notification rather than silently rejecting.
+    </div>
+  </div>
+
+  <!-- Industry bounce rates -->
+  <div class="card">
+    <h2>Bounce Rates by Industry</h2>
+
+    <div class="callout warning">
+      <strong>Two distinct bounce types:</strong><br>
+      <strong>Bounced (Recipient)</strong> — the contact's email address couldn't receive the message (bad address, full mailbox, blocked domain).<br>
+      <strong>Sender Bounced</strong> — the sending account itself got blocked or flagged. This is a sending infrastructure issue, not a data quality issue.
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Industry</th>
+            <th class="num">Campaigns</th>
+            <th class="num">Sent</th>
+            <th class="num">Bounced (Recipient)</th>
+            <th class="rate">Rate</th>
+            <th class="num">Sender Bounced</th>
+            <th class="rate">Rate</th>
+            <th class="num">Total Bounced</th>
+            <th class="rate">Total Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight">
+            <td><strong>Healthcare</strong></td>
+            <td class="num">2</td>
+            <td class="num">1,687</td>
+            <td class="num">356</td>
+            <td class="rate" style="color:#c0392b">21.1%</td>
+            <td class="num">216</td>
+            <td class="rate">12.8%</td>
+            <td class="num">572</td>
+            <td class="rate" style="color:#c0392b"><strong>33.9%</strong></td>
+          </tr>
+          <tr>
+            <td>Insurance</td>
+            <td class="num">2</td>
+            <td class="num">1,578</td>
+            <td class="num">181</td>
+            <td class="rate">11.5%</td>
+            <td class="num">87</td>
+            <td class="rate">5.5%</td>
+            <td class="num">268</td>
+            <td class="rate">17.0%</td>
+          </tr>
+          <tr>
+            <td>Education</td>
+            <td class="num">2</td>
+            <td class="num">1,571</td>
+            <td class="num">144</td>
+            <td class="rate">9.2%</td>
+            <td class="num">84</td>
+            <td class="rate">5.3%</td>
+            <td class="num">228</td>
+            <td class="rate">14.5%</td>
+          </tr>
+          <tr>
+            <td>Construction</td>
+            <td class="num">2</td>
+            <td class="num">1,471</td>
+            <td class="num">139</td>
+            <td class="rate">9.4%</td>
+            <td class="num">47</td>
+            <td class="rate">3.2%</td>
+            <td class="num">186</td>
+            <td class="rate">12.6%</td>
+          </tr>
+          <tr>
+            <td>Cybersecurity</td>
+            <td class="num">3</td>
+            <td class="num">2,053</td>
+            <td class="num">123</td>
+            <td class="rate">6.0%</td>
+            <td class="num">36</td>
+            <td class="rate">1.8%</td>
+            <td class="num">159</td>
+            <td class="rate">7.7%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SMTP breakdown -->
+  <div class="card">
+    <h2>SMTP Code Breakdown</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:16px">Source: 147 NDR emails — 15.6% of recipient bounces. See limitations section below.</p>
+
+    <div class="stat-grid">
+      <div class="stat-box red">
+        <div class="value">119</div>
+        <div class="label">Hard bounces (81%)</div>
+      </div>
+      <div class="stat-box green">
+        <div class="value">0</div>
+        <div class="label">Soft bounces (0%)</div>
+      </div>
+      <div class="stat-box">
+        <div class="value">28</div>
+        <div class="label">Unknown / unparsed (19%)</div>
+      </div>
+    </div>
+
+    <h3>Hard bounce breakdown</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>SMTP Code</th>
+            <th>Description</th>
+            <th class="num">Count</th>
+            <th class="rate">% of Hard</th>
+            <th>Data Quality Issue?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>5.4.1</strong></td>
+            <td>Microsoft DBEB — tenant rejects all external senders</td>
+            <td class="num">101</td>
+            <td class="rate">85%</td>
+            <td><span class="pill no">No — policy block</span></td>
+          </tr>
+          <tr>
+            <td><strong>5.1.1</strong></td>
+            <td>Bad destination mailbox — address doesn't exist</td>
+            <td class="num">6</td>
+            <td class="rate">5%</td>
+            <td><span class="pill yes">Yes</span></td>
+          </tr>
+          <tr>
+            <td><strong>5.2.2</strong></td>
+            <td>Mailbox full</td>
+            <td class="num">4</td>
+            <td class="rate">3%</td>
+            <td><span class="pill no">No — recipient issue</span></td>
+          </tr>
+          <tr>
+            <td><strong>5.1.0</strong></td>
+            <td>Unknown address error</td>
+            <td class="num">3</td>
+            <td class="rate">3%</td>
+            <td><span class="pill yes">Yes</span></td>
+          </tr>
+          <tr>
+            <td><strong>5.4.14</strong></td>
+            <td>Routing loop detected</td>
+            <td class="num">2</td>
+            <td class="rate">2%</td>
+            <td><span class="pill no">No — server config</span></td>
+          </tr>
+          <tr>
+            <td><strong>5.2.1</strong></td>
+            <td>Mailbox disabled / deactivated</td>
+            <td class="num">1</td>
+            <td class="rate">1%</td>
+            <td><span class="pill yes">Yes</span></td>
+          </tr>
+          <tr>
+            <td><strong>5.7.1</strong></td>
+            <td>Delivery not authorized / refused</td>
+            <td class="num">1</td>
+            <td class="rate">1%</td>
+            <td><span class="pill no">No — policy</span></td>
+          </tr>
+          <tr>
+            <td><strong>550</strong></td>
+            <td>Mailbox unavailable</td>
+            <td class="num">1</td>
+            <td class="rate">1%</td>
+            <td><span class="pill maybe">Possibly</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout success" style="margin-top:16px">
+      <strong>Soft bounces: zero detected.</strong> No 4xx codes (mailbox full, server temporarily down, rate-limiting) found in the NDR sample. The bounces we're seeing are overwhelmingly permanent.
+    </div>
+  </div>
+
+  <!-- Key takeaways -->
+  <div class="card">
+    <h2>Key Takeaways for the Data Team</h2>
+    <ol class="takeaways">
+      <li>
+        <strong>Healthcare is the outlier.</strong> 21% recipient bounce rate vs 6–11% for other industries. The Healthcare contact list likely contains more Microsoft 365 enterprise tenants with DBEB blocking, or more stale/invalid contacts.
+      </li>
+      <li>
+        <strong>~90% of hard bounces are 5.4.1 (Microsoft DBEB).</strong> The email address is valid, but the Microsoft 365 tenant has a policy blocking all external cold email. This is a deliverability issue, not a data quality issue. The contacts are real people at real companies; they just can't be reached via cold SMTP.
+      </li>
+      <li>
+        <strong>~9% of hard bounces are genuine bad data</strong> — addresses that don't exist (5.1.1), unknown addresses (5.1.0), or deactivated mailboxes (5.2.1). Extrapolated across 943 total recipient bounces, that's roughly <strong>~85 invalid addresses</strong> across all US campaigns.
+      </li>
+      <li>
+        <strong>Zero soft bounces detected.</strong> No mailbox-full or temporary server issues in the NDR sample. The bounces are permanent, not retriable.
+      </li>
+      <li>
+        <strong>Sender bounces (470 total) are a separate infrastructure problem.</strong> The sending accounts are getting flagged. This is unrelated to contact data quality and should be addressed at the sending account / domain reputation level.
+      </li>
+    </ol>
+  </div>
+
+  <!-- Limitations -->
+  <div class="card">
+    <h2>Limitations</h2>
+    <ul class="limits">
+      <li>SMTP codes are only available for <strong>147 of 943 recipient bounces (15.6%)</strong>. The remaining 85% were silently rejected at SMTP level with no notification email generated. SmartLead tracks bounce counts per campaign but does not store per-bounce SMTP reason in any accessible API endpoint.</li>
+      <li>Industry-level SMTP breakdown is only reliable for <strong>Cybersecurity</strong> (70 NDRs, 57% coverage) and <strong>Construction</strong> (18 NDRs, 13% coverage). Healthcare, Education, and Insurance have near-zero NDR coverage because Microsoft DBEB bounces are silent rejections.</li>
+      <li>If full SMTP coverage is needed, check whether SmartLead's dashboard has a per-campaign "bounced leads" export that includes bounce reason, or contact SmartLead support for a raw bounce event log.</li>
+    </ul>
+  </div>
+
+  <div class="footer">Firmable GTM Engineering &nbsp;·&nbsp; Generated 6 May 2026</div>
+
+</div>
+</body>
+</html>
